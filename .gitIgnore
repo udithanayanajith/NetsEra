@@ -1,0 +1,34 @@
+# dependencies
+node_modules/
+
+# environment variables
+.env
+
+# logs
+logs
+*.log
+npm-debug.log*
+
+# misc
+*.pem
+
+# media
+media
+*.mp4
+*.vob
+*.mkv
+*.avi
+*.mov
+*.wmv
+*.flv
+
+# package-lock.json
+package-lock.json
+
+# pnpm-lock.yaml
+pnpm-lock.yaml
+
+# API Clietn
+*.fetch-client
+
+
