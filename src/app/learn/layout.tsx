@@ -9,7 +9,7 @@ const font = Poppins({
   weight: ["400", "500", "600", "700"],
 });
 
-export default function PracticeLayout({
+export default function LearnLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;

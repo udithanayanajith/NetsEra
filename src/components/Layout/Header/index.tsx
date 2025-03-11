@@ -101,7 +101,7 @@ const Header: React.FC = () => {
                 >
                   <button
                     onClick={() => setIsSignInOpen(false)}
-                    className="absolute top-0 right-0 mr-8 mt-8"
+                    className="absolute top -1 right-0 mr-6 mt-12"
                     aria-label="Close Sign In Modal"
                   >
                     <Icon
@@ -130,7 +130,7 @@ const Header: React.FC = () => {
                 >
                   <button
                     onClick={() => setIsSignUpOpen(false)}
-                    className="absolute top-0 right-0 mr-8 mt-8"
+                    className="absolute top 0 right-0 mr-6 mt-12"
                     aria-label="Close Sign Up Modal"
                   >
                     <Icon

@@ -1,7 +1,7 @@
 "use client";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import Logo from "@/components/Layout/Header/Logo";
 import Loader from "@/components/Common/Loader";
@@ -12,20 +12,31 @@ const DEMO_USERS = [
   { email: "user2@example.com", password: "password456", name: "User 2" },
 ];
 
-const Signin = () => {
+interface SignInModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+const SignInModal = ({ isOpen, onClose }: SignInModalProps) => {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   });
+  const [error, setError] = useState<string | null>(null);
+  const [showSignUpPrompt, setShowSignUpPrompt] = useState(false);
+
+  if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError(null);
+    setShowSignUpPrompt(false);
 
     if (!formData.email || !formData.password) {
-      toast.error("Please fill in all fields");
+      setError("Please fill in all fields");
       setLoading(false);
       return;
     }
@@ -34,14 +45,15 @@ const Signin = () => {
     const user = DEMO_USERS.find((u) => u.email === formData.email);
 
     if (!user) {
-      toast.error("User does not exist. Please sign up first.");
+      setError("User does not exist");
+      setShowSignUpPrompt(true);
       setLoading(false);
       return;
     }
 
     // Check password
     if (user.password !== formData.password) {
-      toast.error("Incorrect password. Please try again.");
+      setError("Incorrect password. Please try again.");
       setLoading(false);
       return;
     }
@@ -58,12 +70,39 @@ const Signin = () => {
 
     toast.success("Login successful");
     setLoading(false);
-    router.push("/");
+    onClose();
+    router.refresh(); // Refresh the page to update authentication state
+  };
+
+  const handleSignUp = () => {
+    onClose();
+    setTimeout(() => {
+      router.push("/");
+    }, 100);
   };
 
   return (
-    <div className="min-h-screen bg-darkmode flex flex-col items-center justify-center px-2">
-      <div className="w-full max-w-md bg-gray-800/60 backdrop-blur-sm p-8 rounded-3xl border border-gray-700">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 px-4">
+      <div className="w-full max-w-md bg-gray-800/60 backdrop-blur-sm p-8 rounded-3xl border border-gray-700 relative">
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-gray-400 hover:text-white"
+        >
+          <svg
+            className="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M6 18L18 6M6 6l12 12"
+            />
+          </svg>
+        </button>
+
         <div className="mb-8 text-center">
           <Logo />
         </div>
@@ -71,9 +110,28 @@ const Signin = () => {
         <div className="relative my-8 flex items-center justify-center">
           <div className="absolute left-0 w-full border-t border-gray-700"></div>
           <span className="relative bg-gray-800/50 px-4 text-white text-sm">
-            Sign In to Access All Features
+            Sign In to Access This Feature
           </span>
         </div>
+
+        {error && (
+          <div className="mb-6 p-4 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500">
+            <p>{error}</p>
+            {showSignUpPrompt && (
+              <div className="mt-2 text-sm">
+                <p className="text-gray-400">
+                  Would you like to create an account?
+                </p>
+                <button
+                  onClick={handleSignUp}
+                  className="mt-2 text-orange-500 hover:text-orange-600 transition-colors duration-300"
+                >
+                  Sign Up Now
+                </button>
+              </div>
+            )}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
@@ -81,9 +139,11 @@ const Signin = () => {
               type="email"
               placeholder="Email"
               value={formData.email}
-              onChange={(e) =>
-                setFormData({ ...formData, email: e.target.value })
-              }
+              onChange={(e) => {
+                setFormData({ ...formData, email: e.target.value });
+                setError(null);
+                setShowSignUpPrompt(false);
+              }}
               className="w-full rounded-lg border border-gray-700 bg-gray-800/30 px-4 py-3 text-white placeholder-gray-400 focus:border-orange-500 focus:outline-none"
               required
             />
@@ -93,9 +153,10 @@ const Signin = () => {
               type="password"
               placeholder="Password"
               value={formData.password}
-              onChange={(e) =>
-                setFormData({ ...formData, password: e.target.value })
-              }
+              onChange={(e) => {
+                setFormData({ ...formData, password: e.target.value });
+                setError(null);
+              }}
               className="w-full rounded-lg border border-gray-700 bg-gray-800/30 px-4 py-3 text-white placeholder-gray-400 focus:border-orange-500 focus:outline-none"
               required
             />
@@ -111,13 +172,12 @@ const Signin = () => {
         <div className="mt-6 text-center">
           <p className="text-gray-400">
             Not a member yet?{" "}
-            <Link
-              href="#"
+            <button
+              onClick={handleSignUp}
               className="text-orange-500 hover:text-orange-600 transition-colors duration-300"
-              onClick={() => router.push("/")}
             >
               Sign Up
-            </Link>
+            </button>
           </p>
         </div>
       </div>
@@ -125,4 +185,4 @@ const Signin = () => {
   );
 };
 
-export default Signin;
+export default SignInModal;
