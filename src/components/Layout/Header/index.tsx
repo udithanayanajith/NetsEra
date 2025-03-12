@@ -26,6 +26,9 @@ const Header: React.FC = () => {
   const signUpRef = useRef<HTMLDivElement>(null);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
 
+  // Check if current page is a learn detail page
+  const isLearnDetailPage = pathUrl.includes('/learn/') && pathUrl !== '/learn';
+
   const handleScroll = () => {
     setSticky(window.scrollY >= 20);
   };
@@ -72,10 +75,14 @@ const Header: React.FC = () => {
   return (
     <header
       className={`fixed top-0 z-40 w-full transition-all duration-300 ${
-        sticky ? "shadow-lg bg-black py-4" : "shadow-none py-8 bg-black"
+        sticky 
+          ? "shadow-lg bg-black py-2" 
+          : isLearnDetailPage 
+            ? "shadow-none py-3 bg-black" 
+            : "shadow-none py-8 bg-black"
       }`}
     >
-      <div className="lg:py-0 py-2">
+      <div className={`lg:py-0 ${isLearnDetailPage ? 'py-1' : 'py-2'}`}>
         <div className="container mx-auto lg:max-w-screen-xl md:max-w-screen-md flex items-center justify-between px-4">
           <Logo />
           <nav className="hidden lg:flex flex-grow items-center gap-8 justify-center">
@@ -86,7 +93,9 @@ const Header: React.FC = () => {
           <div className="flex items-center gap-4">
             <Link
               href="#"
-              className="hidden lg:block text-white bg-orange-500 hover:bg-orange-600 font-medium text-lg py-4 px-8 rounded-full transition-all duration-300"
+              className={`hidden lg:block text-white bg-orange-500 hover:bg-orange-600 font-medium ${
+                isLearnDetailPage ? 'py-2 px-6 text-base' : 'py-4 px-8 text-lg'
+              } rounded-full transition-all duration-300`}
               onClick={() => {
                 setIsSignInOpen(true);
               }}
@@ -101,13 +110,22 @@ const Header: React.FC = () => {
                 >
                   <button
                     onClick={() => setIsSignInOpen(false)}
-                    className="absolute top -1 right-0 mr-6 mt-12"
-                    aria-label="Close Sign In Modal"
+                    className="absolute top-4 right-4 text-gray-400 hover:text-white"
                   >
-                    <Icon
-                      icon="tabler:currency-xrp"
-                      className="text-white hover:text-orange-500 text-24 inline-block me-2"
-                    />
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-6 w-6"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
                   </button>
                   <Signin />
                 </div>
@@ -115,7 +133,9 @@ const Header: React.FC = () => {
             )}
             <Link
               href="#"
-              className="hidden lg:block bg-transparent border border-orange-500 text-white hover:bg-orange-600 hover:border-orange-600 font-medium text-lg py-4 px-8 rounded-full transition-all duration-300"
+              className={`hidden lg:block bg-transparent border border-orange-500 text-white hover:bg-orange-600 hover:border-orange-600 font-medium ${
+                isLearnDetailPage ? 'py-2 px-6 text-base' : 'py-4 px-8 text-lg'
+              } rounded-full transition-all duration-300`}
               onClick={() => {
                 setIsSignUpOpen(true);
               }}
@@ -130,13 +150,22 @@ const Header: React.FC = () => {
                 >
                   <button
                     onClick={() => setIsSignUpOpen(false)}
-                    className="absolute top 0 right-0 mr-6 mt-12"
-                    aria-label="Close Sign Up Modal"
+                    className="absolute top-4 right-4 text-gray-400 hover:text-white"
                   >
-                    <Icon
-                      icon="tabler:currency-xrp"
-                      className="text-white hover:text-orange-500 text-24 inline-block me-2"
-                    />
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-6 w-6"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
                   </button>
                   <SignUp />
                 </div>

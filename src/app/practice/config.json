@@ -1,0 +1,261 @@
+{
+  "devices": {
+    "pc": {
+      "hostname": "PC1",
+      "interfaces": [
+        {
+          "name": "Ethernet0",
+          "description": "Connected to LAN",
+          "ip_address": "192.168.1.10",
+          "subnet_mask": "255.255.255.0",
+          "gateway": "192.168.1.1",
+          "status": "up",
+          "protocol": "IPv4"
+        }
+      ]
+    },
+    "router": {
+      "hostname": "Router1",
+      "interfaces": [
+        {
+          "name": "GigabitEthernet0/0",
+          "description": "Connected to LAN",
+          "ip_address": "192.168.1.1",
+          "subnet_mask": "255.255.255.0",
+          "status": "up",
+          "protocol": "IPv4",
+          "tracking": {
+            "netflow": true,
+            "syslog": true,
+            "snmp": true
+          }
+        },
+        {
+          "name": "GigabitEthernet0/1",
+          "description": "Connected to WAN",
+          "ip_address": "203.0.113.1",
+          "subnet_mask": "255.255.255.252",
+          "status": "up",
+          "protocol": "IPv4",
+          "tracking": {
+            "netflow": true,
+            "syslog": true,
+            "snmp": true
+          }
+        }
+      ],
+      "monitoring": {
+        "netflow": {
+          "version": 9,
+          "collector": "192.168.1.2",
+          "port": 9996
+        },
+        "syslog": {
+          "server": "192.168.1.2",
+          "facility": "local7",
+          "severity": "informational"
+        },
+        "snmp": {
+          "version": "3",
+          "group": "ADMIN",
+          "user": {
+            "name": "admin",
+            "auth": {
+              "protocol": "sha",
+              "password": "encrypted_auth_password"
+            },
+            "priv": {
+              "protocol": "aes256",
+              "password": "encrypted_priv_password"
+            }
+          }
+        }
+      }
+    },
+    "switch": {
+      "hostname": "Switch1",
+      "vlans": [
+        {
+          "id": 10,
+          "name": "Management",
+          "interfaces": ["FastEthernet0/1", "FastEthernet0/2"]
+        },
+        {
+          "id": 20,
+          "name": "Sales",
+          "interfaces": ["FastEthernet0/3", "FastEthernet0/4"]
+        },
+        {
+          "id": 30,
+          "name": "Engineering",
+          "interfaces": ["FastEthernet0/5", "FastEthernet0/6"]
+        }
+      ],
+      "interfaces": [
+        {
+          "name": "FastEthernet0/1",
+          "mode": "access",
+          "vlan": 10,
+          "status": "up"
+        },
+        {
+          "name": "FastEthernet0/2",
+          "mode": "access",
+          "vlan": 10,
+          "status": "up"
+        },
+        {
+          "name": "FastEthernet0/3",
+          "mode": "access",
+          "vlan": 20,
+          "status": "up"
+        },
+        {
+          "name": "FastEthernet0/4",
+          "mode": "access",
+          "vlan": 20,
+          "status": "up"
+        },
+        {
+          "name": "FastEthernet0/5",
+          "mode": "access",
+          "vlan": 30,
+          "status": "up"
+        },
+        {
+          "name": "FastEthernet0/6",
+          "mode": "access",
+          "vlan": 30,
+          "status": "up"
+        },
+        {
+          "name": "GigabitEthernet0/1",
+          "mode": "trunk",
+          "allowed_vlans": "10,20,30",
+          "status": "up"
+        }
+      ],
+      "spanning_tree": {
+        "mode": "rapid-pvst",
+        "vlans": [
+          {
+            "vlan": 10,
+            "priority": 4096
+          },
+          {
+            "vlan": 20,
+            "priority": 8192
+          },
+          {
+            "vlan": 30,
+            "priority": 12288
+          }
+        ]
+      }
+    }
+  },
+  "commands": {
+    "pc": [
+      {
+        "command": "configure ip <ip_address> <subnet_mask> <gateway>",
+        "description": "Configure the IP address, subnet mask, and gateway for the PC.",
+        "error": "Invalid IP address, subnet mask, or gateway. Ensure format: XXX.XXX.XXX.XXX.",
+        "suggestion": "Example: 'configure ip 192.168.1.10 255.255.255.0 192.168.1.1'."
+      },
+      {
+        "command": "show ip",
+        "description": "Display the current IP configuration of the PC.",
+        "error": "No IP configuration found.",
+        "suggestion": "Use 'configure ip' to set the IP configuration."
+      }
+    ],
+    "router": [
+      {
+        "command": "enable",
+        "description": "Enter privileged EXEC mode",
+        "error": "Invalid password",
+        "suggestion": "Enter correct enable password"
+      },
+      {
+        "command": "configure terminal",
+        "description": "Enter global configuration mode",
+        "error": "Permission denied",
+        "suggestion": "Must be in privileged EXEC mode first",
+        "instructions": [
+          "Enter privileged mode: enable",
+          "Enter password when prompted",
+          "Enter config mode: configure terminal"
+        ]
+      },
+      {
+        "command": "interface GigabitEthernet0/0",
+        "description": "Configure LAN interface",
+        "error": "Invalid interface",
+        "suggestion": "Check interface name",
+        "instructions": [
+          "Enter config mode first",
+          "interface GigabitEthernet0/0",
+          "ip address 192.168.1.1 255.255.255.0",
+          "ip flow ingress",
+          "ip flow egress",
+          "logging event link-status",
+          "no shutdown"
+        ]
+      },
+      {
+        "command": "ip flow-export version 9",
+        "description": "Configure NetFlow",
+        "error": "NetFlow configuration error",
+        "suggestion": "Check NetFlow settings",
+        "instructions": [
+          "ip flow-export version 9",
+          "ip flow-export destination 192.168.1.2 9996",
+          "ip flow-export source GigabitEthernet0/0"
+        ]
+      },
+      {
+        "command": "logging",
+        "description": "Configure system logging",
+        "error": "Syslog configuration error",
+        "suggestion": "Verify syslog server settings",
+        "instructions": [
+          "logging host 192.168.1.2",
+          "logging trap informational",
+          "logging facility local7",
+          "logging source-interface GigabitEthernet0/0"
+        ]
+      },
+      {
+        "command": "snmp-server",
+        "description": "Configure SNMPv3",
+        "error": "SNMP configuration error",
+        "suggestion": "Verify SNMP settings",
+        "instructions": [
+          "snmp-server group ADMIN v3 priv",
+          "snmp-server user admin ADMIN v3 auth sha auth_pass priv aes 256 priv_pass",
+          "snmp-server host 192.168.1.2 version 3 priv admin"
+        ]
+      }
+    ],
+    "switch": [
+      {
+        "command": "vlan <vlan_id>",
+        "description": "Create a VLAN.",
+        "error": "Invalid VLAN ID. VLAN IDs must be between 1 and 4094.",
+        "suggestion": "Example: 'vlan 10'."
+      },
+      {
+        "command": "interface <interface_name>",
+        "description": "Select an interface to configure.",
+        "error": "Invalid interface name. Available interfaces: FastEthernet0/1, FastEthernet0/2.",
+        "suggestion": "Example: 'interface FastEthernet0/1'."
+      },
+      {
+        "command": "switchport mode access",
+        "description": "Set the interface as an access port.",
+        "error": "Invalid mode. Use 'switchport mode access' or 'switchport mode trunk'.",
+        "suggestion": "Example: 'switchport mode access'."
+      }
+    ]
+  }
+}

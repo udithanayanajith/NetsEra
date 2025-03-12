@@ -76,11 +76,7 @@ const Features = () => {
               ))}
             </div>
 
-            <div className="mt-10 flex justify-center">
-              <button className="bg-blue-600 text-white px-6 py-3 rounded-lg shadow-md hover:bg-blue-700 text-lg font-medium">
-                Get Started
-              </button>
-            </div>
+            
           </div>
         </div>
       </div>

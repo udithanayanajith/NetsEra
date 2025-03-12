@@ -10,7 +10,15 @@ section {
   @apply py-20;
 }
 
+.xterm {
+  padding: 10px;
+  background-color: #000000 !important; /* Black background */
+  color: #ffffff !important; /* White text */
+}
 
+.xterm-viewport {
+  overflow: hidden !important;
+}
 
 @layer base {
   :root {
@@ -67,8 +75,6 @@ section {
     --chart-5: 340 75% 55%;
   }
 }
-
-
 
 @layer base {
   * {
