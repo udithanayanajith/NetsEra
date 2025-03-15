@@ -7,9 +7,12 @@ import { usePathname } from "next/navigation";
 
 export default function Template({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isPracticePage = pathname === "/practice";
+  const isStandalonePage = pathname === "/practice" || 
+                          pathname?.startsWith("/practice/configuration") ||
+                          pathname?.startsWith("/quiz/lab") || 
+                          pathname?.startsWith("/quiz/normal");
 
-  if (isPracticePage) {
+  if (isStandalonePage) {
     return children;
   }
 

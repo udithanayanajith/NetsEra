@@ -1,9 +1,29 @@
-import { HeaderItem } from "@/types/menu";
+interface MenuItem {
+  id: number;
+  label: string;
+  href: string;
+  submenu?: SubmenuItem[];
+}
 
-export const headerData: HeaderItem[] = [
-  { label: "Home", href: "/" },
-  { label: "About Us", href: "#about-section" },
+interface SubmenuItem {
+  label: string;
+  href: string;
+  newTab?: boolean;
+}
+
+export const headerData: MenuItem[] = [
+  {
+    id: 1,
+    label: "Home",
+    href: "/",
+  },
+  {
+    id: 2,
+    label: "About Us",
+    href: "#about-section",
+  },
   { 
+    id: 3,
     label: "Learn", 
     href: "/learn",
     submenu: [
@@ -12,6 +32,22 @@ export const headerData: HeaderItem[] = [
       { label: "Switch Configuration", href: "/learn/switch" }
     ]
   },
-  { label: "Practice", href: "/practice" },
-  { label: "Quiz", href: "#quiz-section" },
+  {
+    id: 4,
+    label: "Practice",
+    href: "#",
+    submenu: [
+      { label: "Basic Practice", href: "/practice" },
+      { label: "Configuration Practice", href: "/practice/configuration" }
+    ]
+  },
+  {
+    id: 5,
+    label: "Quiz", 
+    href: "#",
+    submenu: [
+      { label: "Lab Quiz", href: "/quiz/lab" },
+      { label: "Normal Quiz", href: "/quiz/normal" }
+    ]
+  },
 ];

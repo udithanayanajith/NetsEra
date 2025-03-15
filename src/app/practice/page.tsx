@@ -48,7 +48,7 @@ export default function PracticePage() {
               >
                 Router Configuration
               </button>
-              <button
+              {/* <button
                 onClick={() => setActiveTab("switch")}
                 className={`px-6 py-2 rounded-full transition-all duration-300 ${
                   activeTab === "switch"
@@ -57,7 +57,7 @@ export default function PracticePage() {
                 }`}
               >
                 Switch Configuration
-              </button>
+              </button> */}
             </div>
           </div>
 
@@ -67,7 +67,7 @@ export default function PracticePage() {
             <div className="bg-gray-800/50 backdrop-blur-sm rounded-3xl p-6 border border-gray-700">
               {activeTab === "pc" && <PCConfiguration />}
               {activeTab === "router" && <RouterConfiguration />}
-              {activeTab === "switch" && <SwitchConfiguration />}
+              {/* {activeTab === "switch" && <SwitchConfiguration />} */}
             </div>
 
             {/* Instructions Panel */}
