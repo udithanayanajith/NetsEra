@@ -4,6 +4,13 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import Link from "next/link";
 
 interface Question {
   id: number;
@@ -21,6 +28,7 @@ export default function NormalQuizContent() {
   const [score, setScore] = useState(0);
   const [answeredQuestions, setAnsweredQuestions] = useState<number[]>([]);
   const [quizCompleted, setQuizCompleted] = useState(false);
+  const [showScoreboard, setShowScoreboard] = useState(false);
 
   const questions: Question[] = [
     {
@@ -30,22 +38,25 @@ export default function NormalQuizContent() {
         "To increase network bandwidth",
         "To segment a network into logical groups",
         "To connect to the internet",
-        "To encrypt network traffic"
+        "To encrypt network traffic",
       ],
       correctAnswer: 1,
-      explanation: "VLANs (Virtual LANs) are used to segment a physical network into logical groups, improving security and network management by isolating traffic between different departments or groups."
+      explanation:
+        "VLANs (Virtual LANs) are used to segment a physical network into logical groups, improving security and network management by isolating traffic between different departments or groups.",
     },
     {
       id: 2,
-      question: "Which IP address class is typically used for private networks?",
+      question:
+        "Which IP address class is typically used for private networks?",
       options: [
         "Class A (10.0.0.0)",
         "Class B (172.16.0.0)",
         "Class C (192.168.0.0)",
-        "All of the above"
+        "All of the above",
       ],
       correctAnswer: 3,
-      explanation: "All three address ranges (10.0.0.0/8, 172.16.0.0/12, and 192.168.0.0/16) are reserved for private networks as defined in RFC 1918."
+      explanation:
+        "All three address ranges (10.0.0.0/8, 172.16.0.0/12, and 192.168.0.0/16) are reserved for private networks as defined in RFC 1918.",
     },
     {
       id: 3,
@@ -54,34 +65,117 @@ export default function NormalQuizContent() {
         "To assign IP addresses to network devices",
         "To route traffic between different networks",
         "To secure the network from external threats",
-        "To manage network bandwidth"
+        "To manage network bandwidth",
       ],
       correctAnswer: 1,
-      explanation: "A default gateway is a router that serves as an access point to other networks. When a device needs to communicate with a device on another network, it sends the traffic through the default gateway."
-    }
+      explanation:
+        "A default gateway is a router that serves as an access point to other networks. When a device needs to communicate with a device on another network, it sends the traffic through the default gateway.",
+    },
+    {
+      id: 4,
+      question: "Which command is used to create a VLAN on a Cisco switch?",
+      options: [
+        "vlan create 10",
+        "interface vlan 10",
+        "vlan 10",
+        "enable vlan 10",
+      ],
+      correctAnswer: 2,
+      explanation:
+        "The command 'vlan 10' is used to create VLAN 10 on a Cisco switch.",
+    },
+    {
+      id: 5,
+      question: "Which command assigns a port to VLAN 20 on a switch?",
+      options: [
+        "switchport vlan 20",
+        "interface vlan 20",
+        "switchport access vlan 20",
+        "vlan assign 20",
+      ],
+      correctAnswer: 2,
+      explanation:
+        "The command 'switchport access vlan 20' assigns a port to VLAN 20.",
+    },
+    {
+      id: 6,
+      question:
+        "What is the correct command to configure a static route on a Cisco router?",
+      options: [
+        "ip route 192.168.1.0 255.255.255.0 10.0.0.1",
+        "route add 192.168.1.0/24 via 10.0.0.1",
+        "set route static 192.168.1.0/24 gateway 10.0.0.1",
+        "network 192.168.1.0 mask 255.255.255.0",
+      ],
+      correctAnswer: 0,
+      explanation:
+        "The command 'ip route 192.168.1.0 255.255.255.0 10.0.0.1' is used to configure a static route on a Cisco router.",
+    },
+    {
+      id: 7,
+      question:
+        "Which command enters global configuration mode on a Cisco router?",
+      options: [
+        "config",
+        "enable config",
+        "configure terminal",
+        "terminal config",
+      ],
+      correctAnswer: 2,
+      explanation:
+        "The command 'configure terminal' enters global configuration mode on a Cisco router.",
+    },
+    {
+      id: 8,
+      question:
+        "Which command saves the current router configuration to NVRAM?",
+      options: [
+        "copy startup-config running-config",
+        "copy running-config startup-config",
+        "write erase",
+        "save all",
+      ],
+      correctAnswer: 1,
+      explanation:
+        "The command 'copy running-config startup-config' saves the current configuration to NVRAM.",
+    },
+    {
+      id: 9,
+      question: "Which of the following is a valid private IP address?",
+      options: ["172.33.10.5", "192.168.1.10", "200.100.50.25", "8.8.8.8"],
+      correctAnswer: 1,
+      explanation:
+        "The IP address '192.168.1.10' is a valid private IP address as defined in RFC 1918.",
+    },
+    {
+      id: 10,
+      question:
+        "Which command can be used on a Windows PC to check its IP configuration?",
+      options: ["ip show", "ifconfig", "ipconfig", "show ip"],
+      correctAnswer: 2,
+      explanation:
+        "The command 'ipconfig' is used on a Windows PC to check its IP configuration.",
+    },
   ];
 
   const currentQuestion = questions[currentQuestionIndex];
 
   const handleAnswer = (answerIndex: number) => {
     if (answeredQuestions.includes(currentQuestion.id)) return;
-    
+
     setSelectedAnswer(answerIndex);
     setShowExplanation(true);
-    
+
     if (answerIndex === currentQuestion.correctAnswer) {
       setScore(score + 1);
     }
-    
+
     setAnsweredQuestions([...answeredQuestions, currentQuestion.id]);
 
-    // Auto-advance to next question after a delay
-    if (currentQuestionIndex < questions.length - 1) {
-      setTimeout(() => {
-        handleNextQuestion();
-      }, 2000);
-    } else {
+    // Check if all questions are answered
+    if (answeredQuestions.length + 1 === questions.length) {
       setQuizCompleted(true);
+      setShowScoreboard(true); // Show scoreboard modal
     }
   };
 
@@ -108,50 +202,18 @@ export default function NormalQuizContent() {
     setScore(0);
     setAnsweredQuestions([]);
     setQuizCompleted(false);
+    setShowScoreboard(false); // Hide scoreboard modal
   };
-
-  if (quizCompleted) {
-    return (
-      <div className="container mx-auto p-6 max-w-4xl">
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>Quiz Completed!</CardTitle>
-          </CardHeader>
-          <CardContent className="text-center">
-            <div className="text-4xl font-bold mb-4">
-              Score: {score}/{questions.length}
-            </div>
-            <div className="text-lg mb-6">
-              {score === questions.length 
-                ? "Perfect score! Excellent work!" 
-                : score > questions.length / 2 
-                ? "Good job! Keep practicing to improve." 
-                : "Keep studying and try again!"}
-            </div>
-            <div className="space-x-4">
-              <Button variant="outline" onClick={() => router.push('/')}>
-                Back to Home
-              </Button>
-              <Button onClick={restartQuiz}>
-                Try Again
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
 
   return (
     <div className="container mx-auto p-6 max-w-4xl">
-      <div className="mb-8">
-        <Button
-          variant="outline"
-          onClick={() => router.push('/')}
-          className="mb-4"
+      <div className="flex justify-end p-7 ">
+        <Link
+          href="/"
+          className="text-orange-500 hover:text-orange-600 transition-colors duration-300"
         >
           ← Back to Home
-        </Button>
+        </Link>
       </div>
 
       <div className="flex justify-between items-center mb-6">
@@ -221,6 +283,33 @@ export default function NormalQuizContent() {
           Next Question
         </Button>
       </div>
+
+      {/* Scoreboard Modal */}
+      <Dialog open={showScoreboard} onOpenChange={setShowScoreboard}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Quiz Completed!</DialogTitle>
+          </DialogHeader>
+          <div className="text-center">
+            <div className="text-4xl font-bold mb-4">
+              Score: {score}/{questions.length}
+            </div>
+            <div className="text-lg mb-6">
+              {score === questions.length
+                ? "Perfect score! Excellent work!"
+                : score > questions.length / 2
+                ? "Good job! Keep practicing to improve."
+                : "Keep studying and try again!"}
+            </div>
+            <div className="space-x-4">
+              <Button variant="outline" onClick={() => router.push("/")}>
+                Back to Home
+              </Button>
+              <Button onClick={restartQuiz}>Try Again</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
