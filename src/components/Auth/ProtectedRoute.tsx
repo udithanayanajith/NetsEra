@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { isAuthenticated } from "@/utils/auth";
-import SignInModal from "./SignInModal";
+import SignIn from "./SignIn";
+import { checkAuth, onAuthChange } from "./firebaseConfig/authService"; // Import onAuthStateChanged
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -16,9 +16,18 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
 
   useEffect(() => {
     setIsClient(true);
-    if (!isAuthenticated()) {
-      setShowModal(true);
-    }
+
+    // Listen for authentication state changes
+    const unsubscribe = onAuthChange((user) => {
+      if (!user) {
+        setShowModal(true); // Show the SignIn modal if the user is not authenticated
+      } else {
+        setShowModal(false); // Hide the SignIn modal if the user is authenticated
+      }
+    });
+
+    // Cleanup the listener on unmount
+    return () => unsubscribe();
   }, []);
 
   // Don't render anything on the server side
@@ -26,15 +35,16 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     return null;
   }
 
-  if (!isAuthenticated()) {
+  // If the user is not authenticated, show the SignIn modal
+  if (!checkAuth()) {
     return (
       <>
         {showModal && (
-          <SignInModal
+          <SignIn
             isOpen={showModal}
             onClose={() => {
               setShowModal(false);
-              router.push("/");
+              router.push("/"); // Redirect to the home page after closing the modal
             }}
           />
         )}
@@ -42,6 +52,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     );
   }
 
+  // If the user is authenticated, render the children
   return <>{children}</>;
 };
 

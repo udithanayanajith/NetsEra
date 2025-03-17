@@ -1,69 +1,74 @@
+// SignIn.tsx
 "use client";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import Logo from "@/components/Layout/Header/Logo";
 import Loader from "@/components/Common/Loader";
+import { signIn } from "../firebaseConfig/authService";
 
-// Demo users (in a real app, this would be in a database)
-const DEMO_USERS = [
-  { email: "user1@example.com", password: "password123", name: "User 1" },
-  { email: "user2@example.com", password: "password456", name: "User 2" },
-];
+interface SignInModalProps {
+  isOpen: boolean; // Add isOpen to the props interface
+  onClose: () => void;
+}
 
-const Signin = () => {
+function SignIn({ isOpen, onClose }: SignInModalProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   });
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError(null);
 
-    if (!formData.email || !formData.password) {
-      toast.error("Please fill in all fields");
+    try {
+      await signIn(formData.email, formData.password);
+      toast.success("Login successful!");
+      onClose(); // Close the modal
+      router.refresh(); // Refresh the page to update the UI
+    } catch (error: any) {
+      if (
+        error.code === "auth/user-not-found" ||
+        error.code === "auth/wrong-password"
+      ) {
+        setError("Invalid email or password.");
+      } else {
+        setError("Login failed. Please try again.");
+      }
+    } finally {
       setLoading(false);
-      return;
     }
-
-    // Find user by email
-    const user = DEMO_USERS.find((u) => u.email === formData.email);
-
-    if (!user) {
-      toast.error("User does not exist. Please sign up first.");
-      setLoading(false);
-      return;
-    }
-
-    // Check password
-    if (user.password !== formData.password) {
-      toast.error("Incorrect password. Please try again.");
-      setLoading(false);
-      return;
-    }
-
-    // If validation passes, store user data in session storage
-    sessionStorage.setItem(
-      "user",
-      JSON.stringify({
-        email: user.email,
-        name: user.name,
-        isAuthenticated: true,
-      })
-    );
-
-    toast.success("Login successful");
-    setLoading(false);
-    router.push("/");
   };
 
+  if (!isOpen) return null;
   return (
-    <div className="min-h-screen bg-darkmode flex flex-col items-center justify-center px-2">
-      <div className="w-full max-w-md bg-gray-800/60 backdrop-blur-sm p-8 rounded-3xl border border-gray-700">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 px-4">
+      <div className="modal-container w-full max-w-md bg-gray-800/60 backdrop-blur-sm p-8 rounded-3xl border border-gray-700 relative">
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-gray-400 hover:text-white"
+        >
+          <svg
+            className="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M6 18L18 6M6 6l12 12"
+            />
+          </svg>
+        </button>
+
         <div className="mb-8 text-center">
           <Logo />
         </div>
@@ -71,9 +76,15 @@ const Signin = () => {
         <div className="relative my-8 flex items-center justify-center">
           <div className="absolute left-0 w-full border-t border-gray-700"></div>
           <span className="relative bg-gray-800/50 px-4 text-white text-sm">
-            Sign In to Access All Features
+            Sign In to Access This Feature
           </span>
         </div>
+
+        {error && (
+          <div className="mb-6 p-4 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500">
+            <p>{error}</p>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
@@ -84,8 +95,8 @@ const Signin = () => {
               onChange={(e) =>
                 setFormData({ ...formData, email: e.target.value })
               }
-              className="w-full rounded-lg border border-gray-700 bg-gray-800/30 px-4 py-3 text-white placeholder-gray-400 focus:border-orange-500 focus:outline-none"
               required
+              className="w-full rounded-lg border border-gray-700 bg-gray-800/30 px-4 py-3 text-white placeholder-gray-400 focus:border-orange-500 focus:outline-none"
             />
           </div>
           <div>
@@ -96,33 +107,21 @@ const Signin = () => {
               onChange={(e) =>
                 setFormData({ ...formData, password: e.target.value })
               }
-              className="w-full rounded-lg border border-gray-700 bg-gray-800/30 px-4 py-3 text-white placeholder-gray-400 focus:border-orange-500 focus:outline-none"
               required
+              className="w-full rounded-lg border border-gray-700 bg-gray-800/30 px-4 py-3 text-white placeholder-gray-400 focus:border-orange-500 focus:outline-none"
             />
           </div>
           <button
             type="submit"
             className="w-full rounded-lg bg-orange-500 py-3 text-white font-medium hover:bg-orange-600 transition-colors duration-300"
+            disabled={loading}
           >
-            Sign In {loading && <Loader />}
+            {loading ? <Loader /> : "Sign In"}
           </button>
         </form>
-
-        <div className="mt-6 text-center">
-          <p className="text-gray-400">
-            Not a member yet?{" "}
-            <Link
-              href="#"
-              className="text-orange-500 hover:text-orange-600 transition-colors duration-300"
-              onClick={() => router.push("/")}
-            >
-              Sign Up
-            </Link>
-          </p>
-        </div>
       </div>
     </div>
   );
-};
+}
 
-export default Signin;
+export default SignIn;

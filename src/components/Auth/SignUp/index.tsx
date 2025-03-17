@@ -1,18 +1,13 @@
 "use client";
-import Link from "next/link";
+
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import Logo from "@/components/Layout/Header/Logo";
-import { useState } from "react";
 import Loader from "@/components/Common/Loader";
+import { signUp } from "../firebaseConfig/authService";
 
-// Demo users (in a real app, this would be in a database)
-const DEMO_USERS = [
-  { email: "user1@example.com", password: "password123", name: "User 1" },
-  { email: "user2@example.com", password: "password456", name: "User 2" },
-];
-
-const SignUp = () => {
+const SignUp = ({ onClose }: { onClose: () => void }) => {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -20,55 +15,31 @@ const SignUp = () => {
     email: "",
     password: "",
   });
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError(null);
 
-    if (!formData.name || !formData.email || !formData.password) {
-      toast.error("Please fill in all fields");
-      setLoading(false);
-      return;
-    }
-
-    // Check if user already exists
-    const existingUser = DEMO_USERS.find((u) => u.email === formData.email);
-    if (existingUser) {
-      toast.error(
-        "User with this email already exists. Please sign in instead."
-      );
+    // Password validation
+    if (formData.password.length < 7) {
+      setError("Password must be at least 7 characters long.");
       setLoading(false);
       return;
     }
 
     try {
-      // If validation passes, store user data in session storage
-      sessionStorage.setItem(
-        "user",
-        JSON.stringify({
-          name: formData.name,
-          email: formData.email,
-          isAuthenticated: true,
-        })
-      );
-
-      // In a real app, we would also add the user to the database here
-      DEMO_USERS.push({
-        email: formData.email,
-        password: formData.password,
-        name: formData.name,
-      });
-
-      toast.success("Successfully registered");
-
-      // Small delay to show the success message
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
-      // Refresh and redirect to the previous page or home
-      router.refresh();
-      router.back();
-    } catch (error) {
-      toast.error("Registration failed. Please try again.");
+      await signUp(formData.email, formData.password, formData.name);
+      toast.success("Successfully registered!");
+      onClose(); // Close the modal
+      router.refresh(); // Refresh the page to update the UI
+    } catch (error: any) {
+      if (error.code === "auth/email-already-in-use") {
+        setError("User with this email already exists.");
+      } else {
+        setError("Registration failed. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
@@ -87,6 +58,12 @@ const SignUp = () => {
             Create Your Account
           </span>
         </div>
+
+        {error && (
+          <div className="mb-6 p-4 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500">
+            <p>{error}</p>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
@@ -128,38 +105,11 @@ const SignUp = () => {
           <button
             type="submit"
             className="w-full rounded-lg bg-orange-500 py-3 text-white font-medium hover:bg-orange-600 transition-colors duration-300"
+            disabled={loading}
           >
-            Sign Up {loading && <Loader />}
+            {loading ? <Loader /> : "Sign Up"}
           </button>
         </form>
-
-        <div className="mt-6 text-center space-y-2">
-          <p className="text-gray-400 text-sm">
-            By creating an account you agree to our{" "}
-            <Link
-              href="/privacy"
-              className="text-orange-500 hover:text-orange-600 transition-colors duration-300"
-            >
-              Privacy Policy
-            </Link>{" "}
-            and{" "}
-            <Link
-              href="/terms"
-              className="text-orange-500 hover:text-orange-600 transition-colors duration-300"
-            >
-              Terms of Service
-            </Link>
-          </p>
-          <p className="text-gray-400">
-            Already have an account?{" "}
-            <button
-              onClick={() => router.back()}
-              className="text-orange-500 hover:text-orange-600 transition-colors duration-300"
-            >
-              Sign In
-            </button>
-          </p>
-        </div>
       </div>
     </div>
   );

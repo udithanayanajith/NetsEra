@@ -1,9 +1,8 @@
+// app/layout.tsx
 import { Poppins } from "next/font/google";
 import "./globals.css";
-import Header from "@/components/Layout/Header";
-import Footer from "@/components/Layout/Footer";
 import { ThemeProvider } from "next-themes";
-import ScrollToTop from "@/components/ScrollToTop";
+import { AuthProvider } from "@/components/Auth/AuthContext";
 
 const font = Poppins({
   subsets: ["latin"],
@@ -23,7 +22,7 @@ export default function RootLayout({
           defaultTheme="dark"
           enableSystem={false}
         >
-          {children}
+          <AuthProvider> {children}</AuthProvider>
         </ThemeProvider>
       </body>
     </html>

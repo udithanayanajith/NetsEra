@@ -1,33 +1,38 @@
+// Header/index.tsx
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { headerData } from "../Header/Navigation/menuData";
 import Logo from "./Logo";
-import Image from "next/image";
 import HeaderLink from "../Header/Navigation/HeaderLink";
 import MobileHeaderLink from "../Header/Navigation/MobileHeaderLink";
-import Signin from "@/components/Auth/SignIn";
+import { useRouter } from "next/navigation";
 import SignUp from "@/components/Auth/SignUp";
 import { useTheme } from "next-themes";
-import { Icon } from "@iconify/react/dist/iconify.js";
+
+import SignIn from "@/components/Auth/SignIn";
+import { useAuth } from "@/components/Auth/AuthContext";
 
 const Header: React.FC = () => {
+  const router = useRouter();
   const pathUrl = usePathname();
-  const { theme, setTheme } = useTheme();
+  useTheme();
 
   const [navbarOpen, setNavbarOpen] = useState(false);
   const [sticky, setSticky] = useState(false);
   const [isSignInOpen, setIsSignInOpen] = useState(false);
   const [isSignUpOpen, setIsSignUpOpen] = useState(false);
 
+  const { isAuthenticated, user, logout } = useAuth(); // Use authentication state from context
+
   const navbarRef = useRef<HTMLDivElement>(null);
   const signInRef = useRef<HTMLDivElement>(null);
   const signUpRef = useRef<HTMLDivElement>(null);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
 
-  // Check if current page is a learn detail page
-  const isLearnDetailPage = pathUrl.includes('/learn/') && pathUrl !== '/learn';
+  const isLearnDetailPage = pathUrl.includes("/learn/") && pathUrl !== "/learn";
+  const [showModal, setShowModal] = useState(false);
 
   const handleScroll = () => {
     setSticky(window.scrollY >= 20);
@@ -72,17 +77,22 @@ const Header: React.FC = () => {
     }
   }, [isSignInOpen, isSignUpOpen, navbarOpen]);
 
+  const handleLogout = async () => {
+    await logout();
+    router.push("/");
+  };
+
   return (
     <header
       className={`fixed top-0 z-40 w-full transition-all duration-300 ${
-        sticky 
-          ? "shadow-lg bg-black py-2" 
-          : isLearnDetailPage 
-            ? "shadow-none py-3 bg-black" 
-            : "shadow-none py-8 bg-black"
+        sticky
+          ? "shadow-lg bg-black py-2"
+          : isLearnDetailPage
+          ? "shadow-none py-3 bg-black"
+          : "shadow-none py-8 bg-black"
       }`}
     >
-      <div className={`lg:py-0 ${isLearnDetailPage ? 'py-1' : 'py-2'}`}>
+      <div className={`lg:py-0 ${isLearnDetailPage ? "py-1" : "py-2"}`}>
         <div className="container mx-auto lg:max-w-screen-xl md:max-w-screen-md flex items-center justify-between px-4">
           <Logo />
           <nav className="hidden lg:flex flex-grow items-center gap-8 justify-center">
@@ -91,85 +101,77 @@ const Header: React.FC = () => {
             ))}
           </nav>
           <div className="flex items-center gap-4">
-            <Link
-              href="#"
-              className={`hidden lg:block text-white bg-orange-500 hover:bg-orange-600 font-medium ${
-                isLearnDetailPage ? 'py-2 px-6 text-base' : 'py-4 px-8 text-lg'
-              } rounded-full transition-all duration-300`}
-              onClick={() => {
-                setIsSignInOpen(true);
-              }}
-            >
-              Sign In
-            </Link>
-            {isSignInOpen && (
-              <div className="fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 flex items-center justify-center z-50">
-                <div
-                  ref={signInRef}
-                  className="relative mx-auto w-full max-w-md overflow-hidden rounded-lg px-8 pt-14 pb-8 text-center bg-darkmode"
+            {!isAuthenticated ? (
+              <>
+                <Link
+                  href="#"
+                  className={`hidden lg:block text-white bg-orange-500 hover:bg-orange-600 font-medium ${
+                    isLearnDetailPage
+                      ? "py-2 px-6 text-base"
+                      : "py-4 px-8 text-lg"
+                  } rounded-full transition-all duration-300`}
+                  onClick={() => setIsSignInOpen(true)}
                 >
-                  <button
-                    onClick={() => setIsSignInOpen(false)}
-                    className="absolute top-4 right-4 text-gray-400 hover:text-white"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-6 w-6"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
+                  Sign In
+                </Link>
+                {isSignInOpen && (
+                  <div className="fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div
+                      ref={signInRef}
+                      className="relative mx-auto w-full max-w-md overflow-hidden rounded-lg px-8 pt-14 pb-8 text-center bg-darkmode"
                     >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M6 18L18 6M6 6l12 12"
+                      <button
+                        onClick={() => setIsSignInOpen(false)}
+                        className="absolute top-4 right-4 text-gray-400 hover:text-white"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-6 w-6"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M6 18L18 6M6 6l12 12"
+                          />
+                        </svg>
+                      </button>
+                      <SignIn
+                        isOpen={true}
+                        onClose={() => {
+                          setIsSignInOpen(false);
+                          router.push("/");
+                        }}
                       />
-                    </svg>
-                  </button>
-                  <Signin />
-                </div>
-              </div>
-            )}
-            <Link
-              href="#"
-              className={`hidden lg:block bg-transparent border border-orange-500 text-white hover:bg-orange-600 hover:border-orange-600 font-medium ${
-                isLearnDetailPage ? 'py-2 px-6 text-base' : 'py-4 px-8 text-lg'
-              } rounded-full transition-all duration-300`}
-              onClick={() => {
-                setIsSignUpOpen(true);
-              }}
-            >
-              Sign Up
-            </Link>
-            {isSignUpOpen && (
-              <div className="fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 flex items-center justify-center z-50">
-                <div
-                  ref={signUpRef}
-                  className="relative mx-auto w-full max-w-md overflow-hidden rounded-lg bg-darkmode px-8 pt-14 pb-8 text-center"
+                    </div>
+                  </div>
+                )}
+                <Link
+                  href="#"
+                  className={`hidden lg:block bg-transparent border border-orange-500 text-white hover:bg-orange-600 hover:border-orange-600 font-medium ${
+                    isLearnDetailPage
+                      ? "py-2 px-6 text-base"
+                      : "py-4 px-8 text-lg"
+                  } rounded-full transition-all duration-300`}
+                  onClick={() => setIsSignUpOpen(true)}
                 >
-                  <button
-                    onClick={() => setIsSignUpOpen(false)}
-                    className="absolute top-4 right-4 text-gray-400 hover:text-white"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-6 w-6"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M6 18L18 6M6 6l12 12"
-                      />
-                    </svg>
-                  </button>
-                  <SignUp />
-                </div>
-              </div>
+                  Sign Up
+                </Link>
+              </>
+            ) : (
+              <button
+                onClick={handleLogout}
+                className={`hidden lg:block bg-transparent border border-orange-500 text-white hover:bg-orange-600 hover:border-orange-600 font-medium ${
+                  isLearnDetailPage
+                    ? "py-2 px-6 text-base"
+                    : "py-4 px-8 text-lg"
+                } rounded-full transition-all duration-300`}
+              >
+                Log Out
+              </button>
             )}
             <button
               onClick={() => setNavbarOpen(!navbarOpen)}
@@ -195,8 +197,6 @@ const Header: React.FC = () => {
             <h2 className="text-lg font-bold text-white">
               <Logo />
             </h2>
-
-            {/*  */}
             <button
               onClick={() => setNavbarOpen(false)}
               className="bg-[url('/images/closed.svg')] bg-no-repeat bg-contain w-5 h-5 absolute top-0 right-0 mr-8 mt-8 invert"
@@ -208,26 +208,37 @@ const Header: React.FC = () => {
               <MobileHeaderLink key={index} item={item} />
             ))}
             <div className="mt-4 flex flex-col space-y-4 w-full">
-              <Link
-                href="#"
-                className="bg-transparent border border-primary text-white px-4 py-2 rounded-lg hover:bg-primary"
-                onClick={() => {
-                  setIsSignInOpen(true);
-                  setNavbarOpen(false);
-                }}
-              >
-                Sign In
-              </Link>
-              <Link
-                href="#"
-                className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/80"
-                onClick={() => {
-                  setIsSignUpOpen(true);
-                  setNavbarOpen(false);
-                }}
-              >
-                Sign Up
-              </Link>
+              {!isAuthenticated ? (
+                <>
+                  <Link
+                    href="#"
+                    className="bg-transparent border border-primary text-white px-4 py-2 rounded-lg hover:bg-primary"
+                    onClick={() => {
+                      setIsSignInOpen(true);
+                      setNavbarOpen(false);
+                    }}
+                  >
+                    Sign In
+                  </Link>
+                  <Link
+                    href="#"
+                    className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/80"
+                    onClick={() => {
+                      setIsSignUpOpen(true);
+                      setNavbarOpen(false);
+                    }}
+                  >
+                    Sign Up
+                  </Link>
+                </>
+              ) : (
+                <button
+                  onClick={handleLogout}
+                  className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/80"
+                >
+                  Log Out
+                </button>
+              )}
             </div>
           </nav>
         </div>
