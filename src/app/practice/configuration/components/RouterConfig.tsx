@@ -3,6 +3,9 @@
 import { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { DialogHeader } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@radix-ui/react-dialog";
 
 interface RouterInterface {
   name: string;
@@ -188,7 +191,7 @@ export default function RouterConfig() {
   });
 
   const cliRef = useRef<HTMLDivElement>(null);
-
+  const [isNetworkModalOpen, setIsNetworkModalOpen] = useState(false);
   useEffect(() => {
     if (cliRef.current) {
       cliRef.current.scrollTop = cliRef.current.scrollHeight;
@@ -641,7 +644,12 @@ export default function RouterConfig() {
         {/* Summary Statement */}
         <Card>
           <CardHeader>
-            <CardTitle>Task Summary</CardTitle>
+            <div className="flex justify-between items-center">
+              <CardTitle>Task Summary</CardTitle>
+              <Button onClick={() => setIsNetworkModalOpen(true)}>
+                Show the Network
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-white">
@@ -770,6 +778,56 @@ export default function RouterConfig() {
           )}
         </CardContent>
       </Card>
+
+      {/* Network Diagram Modal */}
+      <Dialog open={isNetworkModalOpen} onOpenChange={setIsNetworkModalOpen}>
+        <DialogContent className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg p-6 max-w-4xl w-[90%] mx-auto relative">
+            {/* Close Button */}
+            <button
+              onClick={() => setIsNetworkModalOpen(false)}
+              className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 transition-colors"
+              aria-label="Close"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-6 w-6 text-gray-600"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+
+            <DialogHeader>
+              <DialogTitle>
+                {" "}
+                <h3 className="text-orange-500">Network Diagram :</h3>
+              </DialogTitle>
+            </DialogHeader>
+            <div>
+              <img
+                src="/images/practice/router_1.png"
+                alt="Network Diagram"
+                className="w-1/1.8 h-auto rounded-lg mx-auto mb-3"
+              />
+              <p className="text-m text-gray-600">
+                Assume that there is 1 router, 2 switches, 3 PCs, and 1 laptop.
+                In this session, you will practice configuring the router. The
+                scenario is as follows: the router is connected to both
+                switches, one switch is connected to 2 PCs, and the other switch
+                is connected to 1 PC and 1 laptop. 
+              </p>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

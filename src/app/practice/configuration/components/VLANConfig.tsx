@@ -3,6 +3,9 @@
 import { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { DialogHeader } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@radix-ui/react-dialog";
+import { Button } from "@/components/ui/button";
 
 interface VLAN {
   id: number;
@@ -13,7 +16,7 @@ interface VLAN {
 interface SwitchPort {
   id: number;
   vlan: number | null;
-  mode: "access";
+  mode: "access" | "trunk";
   status: "up" | "down";
 }
 
@@ -99,26 +102,50 @@ const VALID_COMMANDS: Command[] = [
   {
     command: "switchport mode access",
     requiredMode: "interface",
-    nextCommands: ["switchport access vlan"],
+    nextCommands: ["switchport access vlan 10", "switchport access vlan 20"],
     help: "Set port mode to access",
     suggestion: "Set mode: 'switchport mode access'",
     instructions: ["1. Set port mode to access"],
   },
   {
-    command: "switchport access vlan",
-    requiredMode: "interface",
-    nextCommands: ["no shutdown"],
-    help: "Assign VLAN to port",
-    suggestion: "Assign VLAN: 'switchport access vlan 10/20'",
-    instructions: ["1. Assign the port to appropriate VLAN"],
-  },
-  {
-    command: "no shutdown",
+    command: "switchport access vlan 10",
     requiredMode: "interface",
     nextCommands: ["exit"],
-    help: "Enable the interface",
-    suggestion: "Enable port: 'no shutdown'",
-    instructions: ["1. Enable the port"],
+    help: "Assign VLAN 10 to port",
+    suggestion: "Assign VLAN: 'switchport access vlan 10'",
+    instructions: ["1. Assign the port to VLAN 10"],
+  },
+  {
+    command: "switchport access vlan 20",
+    requiredMode: "interface",
+    nextCommands: ["exit"],
+    help: "Assign VLAN 20 to port",
+    suggestion: "Assign VLAN: 'switchport access vlan 20'",
+    instructions: ["1. Assign the port to VLAN 20"],
+  },
+  {
+    command: "interface gigabitethernet0/1",
+    requiredMode: "config",
+    nextCommands: ["switchport mode trunk"],
+    help: "Configure trunk port",
+    suggestion: "Select trunk interface: 'interface gigabitethernet0/1'",
+    instructions: ["1. Configure trunk port"],
+  },
+  {
+    command: "switchport mode trunk",
+    requiredMode: "interface",
+    nextCommands: ["switchport trunk allowed vlan 10,20"],
+    help: "Set port mode to trunk",
+    suggestion: "Set mode: 'switchport mode trunk'",
+    instructions: ["1. Set port mode to trunk"],
+  },
+  {
+    command: "switchport trunk allowed vlan 10,20",
+    requiredMode: "interface",
+    nextCommands: ["exit"],
+    help: "Allow VLANs on trunk port",
+    suggestion: "Allow VLANs: 'switchport trunk allowed vlan 10,20'",
+    instructions: ["1. Allow VLANs on trunk port"],
   },
   {
     command: "exit",
@@ -155,6 +182,8 @@ export default function VLANConfig() {
   const [ports, setPorts] = useState<SwitchPort[]>([
     { id: 1, vlan: null, mode: "access", status: "down" },
     { id: 2, vlan: null, mode: "access", status: "down" },
+    { id: 3, vlan: null, mode: "access", status: "down" },
+    { id: 4, vlan: null, mode: "trunk", status: "down" },
   ]);
 
   const [mode, setMode] = useState<
@@ -175,10 +204,13 @@ export default function VLANConfig() {
     completed: [],
     nextExpected: ["enable"],
   });
-
-  // Add command history states
   const [commandHistory, setCommandHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
+  const [configCompleted, setConfigCompleted] = useState({
+    marketing: false,
+    engineering: false,
+    trunk: false,
+  });
 
   const cliRef = useRef<HTMLDivElement>(null);
 
@@ -189,6 +221,10 @@ export default function VLANConfig() {
   }, [cliOutput]);
 
   useEffect(() => {
+    updateSuggestions();
+  }, [mode, currentInterface, commandProgress, error, configCompleted]);
+
+  const updateSuggestions = () => {
     let currentSuggestions: string[] = ["Command Guide:", ""];
 
     if (mode === "user") {
@@ -206,40 +242,28 @@ export default function VLANConfig() {
       return;
     }
 
-    // Handle other modes
-    const nextCommands = getNextCommand();
+    const nextCommands = getNextCommands();
     currentSuggestions.push("Next possible commands:");
 
-    // Special handling for config mode when first entering
-    if (
-      mode === "config" &&
-      commandProgress.completed[commandProgress.completed.length - 1] ===
-        "configure terminal"
-    ) {
-      currentSuggestions.push(
-        "Option 1:",
-        "→ vlan 10",
-        "(Create VLAN 10 for Marketing Department)",
-        "",
-        "Option 2:",
-        "→ vlan 20",
-        "(Create VLAN 20 for Engineering Department)",
-        ""
-      );
+    if (nextCommands.length === 0) {
+      currentSuggestions.push("No more commands needed");
     } else {
-      // Regular command suggestions
-      currentSuggestions.push(
-        ...nextCommands
-          .map((cmd, index) => [
-            `Option ${index + 1}:`,
-            `→ ${cmd}`,
-            VALID_COMMANDS.find((c) => c.command === cmd)?.help
-              ? `(${VALID_COMMANDS.find((c) => c.command === cmd)?.help})`
-              : "",
-            "",
-          ])
-          .flat()
-      );
+      nextCommands.forEach((cmd, index) => {
+        currentSuggestions.push(`Option ${index + 1}:`);
+        currentSuggestions.push(`→ ${cmd}`);
+
+        const cmdInfo = VALID_COMMANDS.find(
+          (c) =>
+            c.command === cmd ||
+            (cmd.startsWith("switchport access vlan") &&
+              c.command.startsWith("switchport access vlan"))
+        );
+
+        if (cmdInfo?.help) {
+          currentSuggestions.push(`(${cmdInfo.help})`);
+        }
+        currentSuggestions.push("");
+      });
     }
 
     currentSuggestions.push("Current mode:", `→ ${mode.toUpperCase()} mode`);
@@ -252,8 +276,22 @@ export default function VLANConfig() {
       );
     }
 
+    currentSuggestions.push(
+      "",
+      "Configuration Status:",
+      `→ Marketing VLAN: ${
+        configCompleted.marketing ? "CONFIGURED ✓" : "NOT CONFIGURED ✗"
+      }`,
+      `→ Engineering VLAN: ${
+        configCompleted.engineering ? "CONFIGURED ✓" : "NOT CONFIGURED ✗"
+      }`,
+      `→ Trunk Port: ${
+        configCompleted.trunk ? "CONFIGURED ✓" : "NOT CONFIGURED ✗"
+      }`
+    );
+
     setSuggestions(currentSuggestions);
-  }, [mode, currentInterface, commandProgress, error]);
+  };
 
   const getPrompt = () => {
     switch (mode) {
@@ -268,66 +306,139 @@ export default function VLANConfig() {
     }
   };
 
-  const getNextCommand = (): string[] => {
-    // Always check current mode first
+  const getNextCommands = (): string[] => {
+    if (
+      configCompleted.marketing &&
+      configCompleted.engineering &&
+      configCompleted.trunk
+    ) {
+      if (mode === "interface") return ["exit"];
+      if (mode === "config") return ["end"];
+      if (mode === "privileged") return ["write memory"];
+      return [];
+    }
+
     if (mode === "user") {
       return ["enable"];
     }
 
-    // Get the last completed command
-    const lastCommand =
-      commandProgress.completed[
-        commandProgress.completed.length - 1
-      ]?.toLowerCase();
+    if (mode === "privileged") {
+      return ["configure terminal"];
+    }
 
-    // For other modes, check command progress
-    switch (mode) {
-      case "privileged":
-        return ["configure terminal"];
+    if (mode === "config") {
+      const lastCommand =
+        commandProgress.completed[
+          commandProgress.completed.length - 1
+        ]?.toLowerCase();
 
-      case "config":
-        // If last command was name Marketing
-        if (lastCommand === "name marketing") {
-          return ["interface fastethernet0/1"];
-        }
-        // If last command was name Engineering
-        if (lastCommand === "name engineering") {
-          return ["interface fastethernet0/2"];
-        }
-        // If last command was vlan 10
-        if (lastCommand === "vlan 10") {
-          return ["name Marketing"];
-        }
-        // If last command was vlan 20
-        if (lastCommand === "vlan 20") {
-          return ["name Engineering"];
-        }
-        // If we just entered config mode or returned from interface mode
-        if (lastCommand === "configure terminal" || lastCommand === "exit") {
-          return ["vlan 10", "vlan 20"];
-        }
-        return ["vlan 10", "vlan 20"];
+      if (
+        configCompleted.marketing &&
+        configCompleted.engineering &&
+        !configCompleted.trunk
+      ) {
+        return ["interface gigabitethernet0/1"];
+      }
 
-      case "interface":
-        if (lastCommand?.startsWith("interface")) {
+      if (
+        configCompleted.marketing &&
+        !configCompleted.engineering &&
+        (lastCommand === "exit" || lastCommand === "configure terminal")
+      ) {
+        return ["vlan 20"];
+      }
+
+      if (lastCommand === "name marketing") {
+        return ["interface fastethernet0/1"];
+      }
+
+      if (lastCommand === "name engineering") {
+        return ["interface fastethernet0/2"];
+      }
+
+      if (lastCommand === "vlan 10") {
+        return ["name Marketing"];
+      }
+
+      if (lastCommand === "vlan 20") {
+        return ["name Engineering"];
+      }
+
+      if (lastCommand === "configure terminal") {
+        if (!configCompleted.marketing) {
+          return ["vlan 10"];
+        } else if (!configCompleted.engineering) {
+          return ["vlan 20"];
+        } else if (!configCompleted.trunk) {
+          return ["interface gigabitethernet0/1"];
+        }
+      }
+
+      if (lastCommand === "exit") {
+        if (!configCompleted.marketing) {
+          return ["vlan 10"];
+        } else if (!configCompleted.engineering) {
+          return ["vlan 20"];
+        } else if (!configCompleted.trunk) {
+          return ["interface gigabitethernet0/1"];
+        } else {
+          return ["end"];
+        }
+      }
+
+      const options = [];
+      if (!configCompleted.marketing) options.push("vlan 10");
+      if (!configCompleted.engineering) options.push("vlan 20");
+      if (
+        configCompleted.marketing &&
+        configCompleted.engineering &&
+        !configCompleted.trunk
+      )
+        options.push("interface gigabitethernet0/1");
+      return options.length ? options : ["end"];
+    }
+
+    if (mode === "interface") {
+      const lastCommand =
+        commandProgress.completed[
+          commandProgress.completed.length - 1
+        ]?.toLowerCase();
+
+      if (lastCommand?.startsWith("interface")) {
+        if (currentInterface?.includes("gigabitethernet0/1")) {
+          return ["switchport mode trunk"];
+        } else {
           return ["switchport mode access"];
         }
-        if (lastCommand === "switchport mode access") {
-          return currentInterface?.includes("0/1")
-            ? ["switchport access vlan 10"]
-            : ["switchport access vlan 20"];
-        }
-        if (lastCommand?.startsWith("switchport access vlan")) {
-          return ["no shutdown"];
-        }
-        if (lastCommand === "no shutdown") {
-          return ["exit"];
-        }
-        return ["switchport mode access"];
+      }
 
-      default:
-        return ["enable"];
+      if (lastCommand === "switchport mode access") {
+        if (currentInterface?.includes("0/1")) {
+          return ["switchport access vlan 10"];
+        } else if (currentInterface?.includes("0/2")) {
+          return ["switchport access vlan 20"];
+        }
+      }
+
+      if (lastCommand === "switchport mode trunk") {
+        return ["switchport trunk allowed vlan 10,20"];
+      }
+
+      if (
+        lastCommand?.startsWith("switchport access vlan") ||
+        lastCommand === "switchport trunk allowed vlan 10,20"
+      ) {
+        return ["exit"];
+      }
+
+      if (currentInterface?.includes("gigabitethernet0/1")) {
+        return ["switchport mode trunk"];
+      } else {
+        return ["switchport mode access"];
+      }
     }
+
+    return ["enable"];
   };
 
   const validateCommand = (
@@ -335,20 +446,70 @@ export default function VLANConfig() {
   ): { valid: boolean; error?: string; help?: string } => {
     const fullCommand = command.trim().toLowerCase();
 
-    // Special commands that are always valid in their modes
-    if (command === "exit") {
+    if (fullCommand === "help" || fullCommand === "?") {
       return { valid: true };
     }
 
-    if (command === "end" && (mode === "config" || mode === "interface")) {
+    if (fullCommand === "clear") {
       return { valid: true };
     }
 
-    if (command === "write memory" && mode === "privileged") {
+    if (fullCommand === "exit") {
+      if (mode !== "user") {
+        return { valid: true };
+      } else {
+        return {
+          valid: false,
+          error: "Cannot exit from user mode",
+          help: "Use 'enable' to enter privileged mode",
+        };
+      }
+    }
+
+    if (fullCommand === "end" && (mode === "config" || mode === "interface")) {
       return { valid: true };
     }
 
-    // Handle other commands
+    if (fullCommand === "write memory" && mode === "privileged") {
+      return { valid: true };
+    }
+
+    if (fullCommand.startsWith("switchport access vlan")) {
+      const vlanId = fullCommand.split(" ")[3];
+
+      if (currentInterface?.includes("0/1") && vlanId === "10") {
+        return { valid: true };
+      } else if (currentInterface?.includes("0/2") && vlanId === "20") {
+        return { valid: true };
+      } else {
+        return {
+          valid: false,
+          error: `Incorrect VLAN assignment. Use 'switchport access vlan ${
+            currentInterface?.includes("0/1") ? "10" : "20"
+          }'`,
+          help: `Port ${
+            currentInterface?.includes("0/1") ? "1" : "2"
+          } should be assigned to VLAN ${
+            currentInterface?.includes("0/1") ? "10" : "20"
+          }`,
+        };
+      }
+    }
+
+    if (fullCommand.startsWith("switchport trunk allowed vlan")) {
+      const vlans = fullCommand.split(" ")[4];
+      if (vlans === "10,20") {
+        return { valid: true };
+      } else {
+        return {
+          valid: false,
+          error:
+            "Incorrect VLAN list. Use 'switchport trunk allowed vlan 10,20'",
+          help: "The trunk should allow both VLANs 10 and 20",
+        };
+      }
+    }
+
     const validCommand = VALID_COMMANDS.find((cmd) =>
       fullCommand.startsWith(cmd.command.toLowerCase())
     );
@@ -372,7 +533,6 @@ export default function VLANConfig() {
     return { valid: true };
   };
 
-  // Add handleKeyDown function for arrow key navigation
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "ArrowUp" && commandHistory.length > 0) {
       e.preventDefault();
@@ -399,12 +559,27 @@ export default function VLANConfig() {
     const command = cliInput.trim().toLowerCase();
     if (!command) return;
 
-    // Add command to history
     setCommandHistory((prev) => [...prev, command]);
     setHistoryIndex(-1);
 
-    // Show command in CLI
     setCliOutput((prev) => [...prev, `${getPrompt()} ${command}`]);
+
+    if (command === "help" || command === "?") {
+      const nextCmds = getNextCommands();
+      setCliOutput((prev) => [
+        ...prev,
+        "Available commands:",
+        ...nextCmds.map((cmd) => `  ${cmd}`),
+        "",
+        "Other commands:",
+        "  exit - Exit current mode",
+        "  end - Return to privileged mode",
+        "  clear - Clear screen",
+        "  help/? - Show this help",
+      ]);
+      setCliInput("");
+      return;
+    }
 
     if (command === "clear") {
       setCliOutput([
@@ -415,14 +590,12 @@ export default function VLANConfig() {
       return;
     }
 
-    // Handle exit command
     if (command === "exit") {
       switch (mode) {
         case "interface":
           setMode("config");
           setCurrentInterface(null);
           setCliOutput((prev) => [...prev, "Returned to configuration mode"]);
-          // Clear any error messages
           setError(null);
           break;
         case "config":
@@ -433,17 +606,6 @@ export default function VLANConfig() {
         case "privileged":
           setMode("user");
           setCliOutput((prev) => [...prev, "Returned to user mode"]);
-          setSuggestions([
-            "Command Guide:",
-            "",
-            "Next possible commands:",
-            "Option 1:",
-            "→ enable",
-            "(Enter privileged mode)",
-            "",
-            "Current mode:",
-            "→ USER mode",
-          ]);
           setCommandProgress({
             completed: [],
             nextExpected: ["enable"],
@@ -455,21 +617,21 @@ export default function VLANConfig() {
       return;
     }
 
-    // Handle other commands
+    if (command === "end" && (mode === "config" || mode === "interface")) {
+      setMode("privileged");
+      if (mode === "interface") {
+        setCurrentInterface(null);
+      }
+      setCliOutput((prev) => [...prev, "Returned to privileged mode"]);
+      setCliInput("");
+      return;
+    }
+
     const validation = validateCommand(command);
     if (!validation.valid) {
       setCliOutput((prev) => [
         ...prev,
-        `Command not found. Use "help" or "?" to view available commands.`,
-      ]);
-
-      const nextCmd = getNextCommand();
-      setSuggestions([
-        "Command entered incorrectly!",
-        `Next command should be: ${nextCmd}`,
-        "Type 'help' or '?' for available commands",
-        `You are in ${mode} mode`,
-        currentInterface ? `Currently configuring: ${currentInterface}` : "",
+        validation.error || "Invalid command. Type 'help' for assistance.",
       ]);
 
       setError(validation.error || null);
@@ -478,12 +640,15 @@ export default function VLANConfig() {
       return;
     }
 
-    // If command is valid, clear any previous error messages
     setError(null);
     setWrongAttempts(0);
-    updateCommandProgress(command);
 
-    // Handle commands
+    const newCompleted = [...commandProgress.completed, command];
+    setCommandProgress({
+      completed: newCompleted,
+      nextExpected: getNextCommands(),
+    });
+
     if (command === "enable") {
       setMode("privileged");
       setCliOutput((prev) => [...prev, "Entered privileged mode"]);
@@ -498,44 +663,58 @@ export default function VLANConfig() {
       ]);
     } else if (command === "write memory") {
       if (mode === "privileged") {
-        setCliOutput((prev) => [...prev, "Building configuration...", "[OK]"]);
-      }
-    } else if (command === "no shutdown") {
-      if (currentInterface) {
-        const interfaceName = currentInterface;
-        setPorts((prev) =>
-          prev.map((port) => {
-            if (port.id === parseInt(interfaceName.split("/")[1])) {
-              return { ...port, status: "up" };
-            }
-            return port;
-          })
-        );
         setCliOutput((prev) => [
           ...prev,
-          `%LINK-5-CHANGED: Interface ${interfaceName}, changed state to up`,
-          `%LINEPROTO-5-UPDOWN: Line protocol on Interface ${interfaceName}, changed state to up`,
+          "Building configuration...",
+          "[OK]",
+          configCompleted.marketing &&
+          configCompleted.engineering &&
+          configCompleted.trunk
+            ? "All VLANs and trunk port have been successfully configured and saved!"
+            : "Configuration saved, but some items are not configured yet.",
         ]);
       }
-    } else if (command.startsWith("interface fastethernet")) {
+    } else if (command.startsWith("interface fastethernet0/1")) {
       setMode("interface");
-      setCurrentInterface(command.split(" ")[1]);
+      setCurrentInterface("fastethernet0/1");
       setCliOutput((prev) => [
         ...prev,
-        `Configuring interface ${command.split(" ")[1]}`,
+        `Configuring interface fastethernet0/1`,
+      ]);
+    } else if (command.startsWith("interface fastethernet0/2")) {
+      setMode("interface");
+      setCurrentInterface("fastethernet0/2");
+      setCliOutput((prev) => [
+        ...prev,
+        `Configuring interface fastethernet0/2`,
+      ]);
+    } else if (command.startsWith("interface gigabitethernet0/1")) {
+      setMode("interface");
+      setCurrentInterface("gigabitethernet0/1");
+      setCliOutput((prev) => [
+        ...prev,
+        `Configuring interface gigabitethernet0/1`,
       ]);
     } else if (command === "switchport mode access") {
       setCliOutput((prev) => [...prev, "Switched port to access mode"]);
+    } else if (command === "switchport mode trunk") {
+      setCliOutput((prev) => [...prev, "Switched port to trunk mode"]);
     } else if (command.startsWith("switchport access vlan")) {
       const vlanId = parseInt(command.split(" ")[3]);
+
       setCliOutput((prev) => [...prev, `Assigned port to VLAN ${vlanId}`]);
+
       if (currentInterface) {
         const portNumber = parseInt(currentInterface.split("/")[1]);
+
         setPorts((prev) =>
           prev.map((port) =>
-            port.id === portNumber ? { ...port, vlan: vlanId } : port
+            port.id === portNumber
+              ? { ...port, vlan: vlanId, status: "up" }
+              : port
           )
         );
+
         setVlans((prev) =>
           prev.map((vlan) => ({
             ...vlan,
@@ -545,64 +724,49 @@ export default function VLANConfig() {
                 : vlan.ports.filter((p) => p !== portNumber),
           }))
         );
+
+        if (vlanId === 10 && currentInterface.includes("0/1")) {
+          setConfigCompleted((prev) => ({ ...prev, marketing: true }));
+        } else if (vlanId === 20 && currentInterface.includes("0/2")) {
+          setConfigCompleted((prev) => ({ ...prev, engineering: true }));
+        }
       }
+    } else if (command === "switchport trunk allowed vlan 10,20") {
+      setCliOutput((prev) => [...prev, "Allowed VLANs 10,20 on trunk port"]);
+
+      if (currentInterface && currentInterface.includes("gigabitethernet0/1")) {
+        setPorts((prev) =>
+          prev.map((port) =>
+            port.id === 4 ? { ...port, mode: "trunk", status: "up" } : port
+          )
+        );
+
+        setConfigCompleted((prev) => ({ ...prev, trunk: true }));
+      }
+    } else if (command.startsWith("vlan")) {
+      const vlanId = parseInt(command.split(" ")[1]);
+      setCliOutput((prev) => [...prev, `Creating VLAN ${vlanId}`]);
+    } else if (command.startsWith("name")) {
+      const vlanName = command.split(" ")[1];
+      setCliOutput((prev) => [...prev, `VLAN name set to ${vlanName}`]);
     }
 
     setCliInput("");
   };
 
-  const updateCommandProgress = (command: string) => {
-    setCommandProgress((prev) => {
-      const completed = [...prev.completed, command];
-      const validCommand = VALID_COMMANDS.find((cmd) =>
-        command.startsWith(cmd.command.toLowerCase())
-      );
-
-      // Determine next commands based on current command and mode
-      let nextCommands: string[] = [];
-
-      if (validCommand) {
-        switch (command.toLowerCase()) {
-          case "vlan 10":
-            nextCommands = ["name Marketing"];
-            break;
-          case "name marketing":
-            nextCommands = ["interface fastethernet0/1"];
-            break;
-          case "vlan 20":
-            nextCommands = ["name Engineering"];
-            break;
-          case "name engineering":
-            nextCommands = ["interface fastethernet0/2"];
-            break;
-          case "switchport mode access":
-            nextCommands = currentInterface?.includes("0/1")
-              ? ["switchport access vlan 10"]
-              : ["switchport access vlan 20"];
-            break;
-          case "no shutdown":
-            nextCommands = ["exit"];
-            break;
-          default:
-            nextCommands = validCommand.nextCommands;
-        }
-      }
-
-      return {
-        completed,
-        nextExpected: nextCommands,
-      };
-    });
-  };
+  const [isNetworkModalOpen, setIsNetworkModalOpen] = useState(false);
 
   return (
     <div className="flex gap-6">
-      {/* Left Side: CLI and Configuration */}
       <div className="flex-1 space-y-6">
-        {/* Task Description Card with integrated port status */}
         <Card>
           <CardHeader>
-            <CardTitle>VLAN Configuration Task</CardTitle>
+            <div className="flex justify-between items-center">
+              <CardTitle>VLAN Configuration Task</CardTitle>
+              <Button onClick={() => setIsNetworkModalOpen(true)}>
+                Show the Network
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 gap-4">
@@ -673,6 +837,37 @@ export default function VLANConfig() {
                 </div>
               </div>
             </div>
+            <div className="mt-4 p-4 rounded bg-gray-800">
+              <strong className="text-lg">Trunk Port</strong>
+              <ul className="list-disc pl-5 mt-2">
+                <li>Port: GigabitEthernet0/1</li>
+                <li>Mode: Trunk</li>
+                <li>Allowed VLANs: 10,20</li>
+              </ul>
+              <div className="mt-3 border-t border-gray-600 pt-3">
+                <strong className="text-sm text-gray-300">Port Status:</strong>
+                <div className="grid grid-cols-2 gap-2 mt-2">
+                  <div>
+                    <span className="text-sm text-gray-400">Mode:</span>
+                    <div className="font-medium">
+                      {ports[3].mode.toUpperCase()}
+                    </div>
+                  </div>
+                  <div>
+                    <span className="text-sm text-gray-400">Status:</span>
+                    <div
+                      className={
+                        ports[3].status === "up"
+                          ? "text-green-500"
+                          : "text-red-500"
+                      }
+                    >
+                      {ports[3].status.toUpperCase()}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
@@ -720,13 +915,18 @@ export default function VLANConfig() {
               </div>
             )}
             <div className="mb-4">
-              <h3 className="text-orange-500 mb-2">Command Guide:</h3>
               {suggestions.map((suggestion, i) => (
                 <div
                   key={i}
                   className={`mb-1 text-sm ${
                     suggestion.startsWith("→")
                       ? "text-green-400 font-bold"
+                      : suggestion.includes("CONFIGURED ✓")
+                      ? "text-green-500"
+                      : suggestion.includes("NOT CONFIGURED ✗")
+                      ? "text-red-500"
+                      : suggestion.startsWith("Option")
+                      ? "text-orange-500"
                       : "text-gray-400"
                   }`}
                 >
@@ -741,6 +941,59 @@ export default function VLANConfig() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Network Diagram Modal */}
+      <Dialog open={isNetworkModalOpen} onOpenChange={setIsNetworkModalOpen}>
+        <DialogContent className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg p-6 max-w-4xl w-[90%] mx-auto relative">
+            {/* Close Button */}
+            <button
+              onClick={() => setIsNetworkModalOpen(false)}
+              className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 transition-colors"
+              aria-label="Close"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-6 w-6 text-gray-600"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+
+            <DialogHeader>
+              <DialogTitle>
+                {" "}
+                <h3 className="text-orange-500">Network Diagram :</h3>
+              </DialogTitle>
+            </DialogHeader>
+            <div>
+              <img
+                src="/images/practice/vlan.png"
+                alt="Network Diagram"
+                className="w-1/1.8 h-auto rounded-lg mx-auto mb-3"
+              />
+              <p className="text-m text-gray-600">
+                Consider a network setup with 2 switches, 3 PCs, 1 laptop and 1
+                databse server. In this session, you will learn how to configure
+                VLANs for different departments. The network is divided into two
+                departments: Engineering and Sales, requiring VLAN creation and
+                PC configuration. According to the diagram, the two switches are
+                linked together. One switch connects to 2 PCs, while the other
+                connects to 1 PC, 1 laptop and a databse server.View the diagram
+                for better understanding.
+              </p>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

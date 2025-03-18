@@ -3,6 +3,9 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { DialogHeader } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@radix-ui/react-dialog";
 
 interface NetworkConfig {
   ipAddress: string;
@@ -250,7 +253,7 @@ export default function PCConfig() {
       );
     }
   };
-
+  const [isNetworkModalOpen, setIsNetworkModalOpen] = useState(false);
   return (
     <div className="flex gap-6">
       {/* Left Side: Task and Configuration */}
@@ -258,7 +261,12 @@ export default function PCConfig() {
         {/* Task Description Card */}
         <Card>
           <CardHeader>
-            <CardTitle>Network Configuration Task</CardTitle>
+            <div className="flex justify-between items-center">
+              <CardTitle>Network Configuration Task</CardTitle>
+              <Button onClick={() => setIsNetworkModalOpen(true)}>
+                Show the Network
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-gray-400">
@@ -458,6 +466,57 @@ export default function PCConfig() {
           </div>
         </CardContent>
       </Card>
+      {/* Network Diagram Modal */}
+      <Dialog open={isNetworkModalOpen} onOpenChange={setIsNetworkModalOpen}>
+        <DialogContent className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg p-6 max-w-4xl w-[90%] mx-auto relative">
+            {/* Close Button */}
+            <button
+              onClick={() => setIsNetworkModalOpen(false)}
+              className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 transition-colors"
+              aria-label="Close"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-6 w-6 text-gray-600"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+
+            <DialogHeader>
+              <DialogTitle>
+                {" "}
+                <h3 className="text-orange-500">Network Diagram :</h3>
+              </DialogTitle>
+            </DialogHeader>
+            <div>
+              <img
+                src="/images/practice/pc.png"
+                alt="Network Diagram"
+                className="w-1/1.8 h-auto rounded-lg mx-auto mb-3"
+              />
+              <p className="text-m text-gray-600">
+                Assume that there is 1 router, 1 switche, 2 PCs. In this
+                session, you will practice configuring PCs. The scenario is as
+                follows: the router is connected to the switche and switch is
+                connected to 2 PCs. Configure the IP addresses, subnet masks,
+                and gateways for each PC according to the department's network
+                rules. Ensure both PCs can communicate within their respective
+                subnets and access their gateways for external connectivity.
+              </p>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

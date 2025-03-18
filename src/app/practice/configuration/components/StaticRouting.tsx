@@ -3,6 +3,9 @@
 import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { DialogHeader } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@radix-ui/react-dialog";
 
 interface Route {
   destination: string;
@@ -126,83 +129,142 @@ const UseCaseCard = ({
 }: {
   onFillData: (route: (typeof SAMPLE_ROUTES)[0]) => void;
 }) => {
+  const [isNetworkModalOpen, setIsNetworkModalOpen] = useState(false);
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Use Case Scenario</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          <div className="text-sm text-gray-400">
-            <p className="font-semibold text-white mb-2">
-              Scenario: Department Network Configuration
-            </p>
-            <p>Configure static routes for three department networks:</p>
+    <>
+      <Card>
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <CardTitle>Use Case Scenario</CardTitle>
+            <Button onClick={() => setIsNetworkModalOpen(true)}>
+              Show the Network
+            </Button>
           </div>
-
+        </CardHeader>
+        <CardContent>
           <div className="space-y-4">
-            {SAMPLE_ROUTES.map((route, index) => (
-              <div
-                key={index}
-                className="border border-gray-700 rounded-lg p-4"
-              >
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h3 className="text-white font-semibold">{route.name}</h3>
-                    <p className="text-sm text-gray-400 mt-1">
-                      {route.description}
-                    </p>
-                    <div className="mt-2 space-y-1 text-sm">
-                      <p>Network: {route.destination}</p>
-                      <p>Mask: {route.mask}</p>
-                      <p>Next Hop: {route.nextHop}</p>
+            <div className="text-sm text-gray-400">
+              <p className="font-semibold text-white mb-2">
+                Scenario: Department Network Configuration
+              </p>
+              <p>Configure static routes for three department networks:</p>
+            </div>
+
+            <div className="space-y-4">
+              {SAMPLE_ROUTES.map((route, index) => (
+                <div
+                  key={index}
+                  className="border border-gray-700 rounded-lg p-4"
+                >
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h3 className="text-white font-semibold">{route.name}</h3>
+                      <p className="text-sm text-gray-400 mt-1">
+                        {route.description}
+                      </p>
+                      <div className="mt-2 space-y-1 text-sm">
+                        <p>Network: {route.destination}</p>
+                        <p>Mask: {route.mask}</p>
+                        <p>Next Hop: {route.nextHop}</p>
+                      </div>
                     </div>
+                    <button
+                      onClick={() => onFillData(route)}
+                      className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
+                    >
+                      Fill Data
+                    </button>
                   </div>
-                  <button
-                    onClick={() => onFillData(route)}
-                    className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
-                  >
-                    Fill Data
-                  </button>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
 
-          <div className="mt-4 border-t border-gray-700 pt-4">
-            <h3 className="text-white font-semibold mb-2">Instructions:</h3>
-            <ol className="list-decimal list-inside text-sm text-gray-400 space-y-2">
-              <li>Use the "Fill Data" button to populate route information</li>
-              <li>Add routes using either the form or CLI commands</li>
-              <li>
-                CLI Configuration Steps:
-                <ul className="list-disc list-inside ml-4 mt-1">
-                  <li>Enter privileged mode: enable</li>
-                  <li>Enter configuration mode: configure terminal</li>
-                  <li>Add route: ip route [network] [mask] [next-hop]</li>
-                  <li>Verify configuration: show ip route</li>
-                  <li>Test connectivity: ping [ip-address]</li>
-                </ul>
-              </li>
-            </ol>
-          </div>
+            <div className="mt-4 border-t border-gray-700 pt-4">
+              <h3 className="text-white font-semibold mb-2">Instructions:</h3>
+              <ol className="list-decimal list-inside text-sm text-gray-400 space-y-2">
+                <li>
+                  Use the "Fill Data" button to populate route information
+                </li>
+                <li>Add routes using either the form or CLI commands</li>
+                <li>
+                  CLI Configuration Steps:
+                  <ul className="list-disc list-inside ml-4 mt-1">
+                    <li>Enter privileged mode: enable</li>
+                    <li>Enter configuration mode: configure terminal</li>
+                    <li>Add route: ip route [network] [mask] [next-hop]</li>
+                    <li>Verify configuration: show ip route</li>
+                    <li>Test connectivity: ping [ip-address]</li>
+                  </ul>
+                </li>
+              </ol>
+            </div>
 
-          <div className="mt-4 bg-gray-800 p-4 rounded-lg">
-            <h3 className="text-white font-semibold mb-2">
-              Example CLI Commands:
-            </h3>
-            <pre className="text-sm text-green-400">
-              Router&gt; enable{"\n"}
-              Router# configure terminal{"\n"}
-              Router(config)# ip route 192.168.10.0 255.255.255.0 10.0.0.1{"\n"}
-              Router(config)# end{"\n"}
-              Router# show ip route{"\n"}
-              Router# ping 192.168.10.1
-            </pre>
+            <div className="mt-4 bg-gray-800 p-4 rounded-lg">
+              <h3 className="text-white font-semibold mb-2">
+                Example CLI Commands:
+              </h3>
+              <pre className="text-sm text-green-400">
+                Router&gt; enable{"\n"}
+                Router# configure terminal{"\n"}
+                Router(config)# ip route 192.168.10.0 255.255.255.0 10.0.0.1
+                {"\n"}
+                Router(config)# end{"\n"}
+                Router# show ip route{"\n"}
+                Router# ping 192.168.10.1
+              </pre>
+            </div>
           </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+      <Dialog open={isNetworkModalOpen} onOpenChange={setIsNetworkModalOpen}>
+        <DialogContent className="fixed inset-0 flex items-start justify-start bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg p-6 max-w-4xl w-[80%] ml-48 mt-4 relative">
+            {/* Close Button */}
+            <button
+              onClick={() => setIsNetworkModalOpen(false)}
+              className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 transition-colors"
+              aria-label="Close"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-6 w-6 text-gray-600"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+
+            <DialogHeader>
+              <DialogTitle>
+                <h3 className="text-orange-500">Network Diagram:</h3>
+              </DialogTitle>
+            </DialogHeader>
+            <div>
+              <img
+                src="/images/practice/static_1.png"
+                alt="Network Diagram"
+                className="w-1/1.8 h-auto rounded-lg mx-auto mb-3"
+              />
+              <p className="text-m text-gray-600">
+                Consider a network setup with 2 routers, 2 switches, 3 PCs, and
+                1 laptop. In this session, you will learn how to configure
+                static routing. The setup consists of two interconnected
+                routers, each linked to a switch. One switch connects to 2 PCs,
+                while the other connects to 1 PC and a laptop. Click here to
+                view the diagram for better clarity.
+              </p>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 
