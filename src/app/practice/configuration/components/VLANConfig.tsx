@@ -553,7 +553,6 @@ export default function VLANConfig() {
       );
     }
   };
-
   const handleCommand = (e: React.FormEvent) => {
     e.preventDefault();
     const command = cliInput.trim().toLowerCase();
@@ -680,6 +679,7 @@ export default function VLANConfig() {
       setCliOutput((prev) => [
         ...prev,
         `Configuring interface fastethernet0/1`,
+        `%LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet0/1, changed state to down`,
       ]);
     } else if (command.startsWith("interface fastethernet0/2")) {
       setMode("interface");
@@ -687,6 +687,7 @@ export default function VLANConfig() {
       setCliOutput((prev) => [
         ...prev,
         `Configuring interface fastethernet0/2`,
+        `%LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet0/2, changed state to down`,
       ]);
     } else if (command.startsWith("interface gigabitethernet0/1")) {
       setMode("interface");
@@ -694,15 +695,28 @@ export default function VLANConfig() {
       setCliOutput((prev) => [
         ...prev,
         `Configuring interface gigabitethernet0/1`,
+        `%LINEPROTO-5-UPDOWN: Line protocol on Interface GigabitEthernet0/1, changed state to down`,
       ]);
     } else if (command === "switchport mode access") {
       setCliOutput((prev) => [...prev, "Switched port to access mode"]);
     } else if (command === "switchport mode trunk") {
-      setCliOutput((prev) => [...prev, "Switched port to trunk mode"]);
+      setCliOutput((prev) => [
+        ...prev,
+        "Switched port to trunk mode",
+        `%LINEPROTO-5-UPDOWN: Line protocol on Interface GigabitEthernet0/1, changed state to up`,
+      ]);
     } else if (command.startsWith("switchport access vlan")) {
       const vlanId = parseInt(command.split(" ")[3]);
 
-      setCliOutput((prev) => [...prev, `Assigned port to VLAN ${vlanId}`]);
+      setCliOutput((prev) => [
+        ...prev,
+        `Assigned port to VLAN ${vlanId}`,
+        `%LINEPROTO-5-UPDOWN: Line protocol on Interface ${
+          currentInterface?.includes("0/1")
+            ? "FastEthernet0/1"
+            : "FastEthernet0/2"
+        }, changed state to up`,
+      ]);
 
       if (currentInterface) {
         const portNumber = parseInt(currentInterface.split("/")[1]);
@@ -753,7 +767,6 @@ export default function VLANConfig() {
 
     setCliInput("");
   };
-
   const [isNetworkModalOpen, setIsNetworkModalOpen] = useState(false);
 
   return (
