@@ -2,12 +2,12 @@ import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBfySv2g8EpKeovkdeidis5qQRAGeTaUSA",
-  authDomain: "netsera-1cf10.firebaseapp.com",
-  projectId: "netsera-1cf10",
-  storageBucket: "netsera-1cf10.firebasestorage.app",
-  messagingSenderId: "37885065636",
-  appId: "1:37885065636:web:669de0fcc63bfbf4936931",
+  apiKey: "AIzaSyAsyO9UWMrg6GfyCcbd-mwOKLG4nKBr-ew",
+  authDomain: "netsera-b59d9.firebaseapp.com",
+  projectId: "netsera-b59d9",
+  storageBucket: "netsera-b59d9.firebasestorage.app",
+  messagingSenderId: "310766144592",
+  appId: "1:310766144592:web:d37a1760d9f4a07545d555",
 };
 
 const app = initializeApp(firebaseConfig);
