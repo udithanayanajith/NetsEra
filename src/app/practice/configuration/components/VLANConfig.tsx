@@ -997,11 +997,11 @@ export default function VLANConfig() {
                 Consider a network setup with 2 switches, 3 PCs, 1 laptop and 1
                 databse server. In this session, you will learn how to configure
                 VLANs for different departments. The network is divided into two
-                departments: Engineering and Sales, requiring VLAN creation and
-                PC configuration. According to the diagram, the two switches are
-                linked together. One switch connects to 2 PCs, while the other
-                connects to 1 PC, 1 laptop and a databse server.View the diagram
-                for better understanding.
+                departments: Engineering and Marketing, requiring VLAN creation
+                and PC configuration. According to the diagram, the two switches
+                are linked together. One switch connects to 2 PCs, while the
+                other connects to 1 PC, 1 laptop and a databse server.View the
+                diagram for better understanding.
               </p>
             </div>
           </div>

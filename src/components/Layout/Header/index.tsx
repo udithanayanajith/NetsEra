@@ -1,4 +1,3 @@
-// Header/index.tsx
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -10,7 +9,6 @@ import MobileHeaderLink from "../Header/Navigation/MobileHeaderLink";
 import { useRouter } from "next/navigation";
 import SignUp from "@/components/Auth/SignUp";
 import { useTheme } from "next-themes";
-
 import SignIn from "@/components/Auth/SignIn";
 import { useAuth } from "@/components/Auth/AuthContext";
 
@@ -24,7 +22,7 @@ const Header: React.FC = () => {
   const [isSignInOpen, setIsSignInOpen] = useState(false);
   const [isSignUpOpen, setIsSignUpOpen] = useState(false);
 
-  const { isAuthenticated, user, logout } = useAuth(); // Use authentication state from context
+  const { isAuthenticated, user, logout } = useAuth();
 
   const navbarRef = useRef<HTMLDivElement>(null);
   const signInRef = useRef<HTMLDivElement>(null);
@@ -160,6 +158,41 @@ const Header: React.FC = () => {
                 >
                   Sign Up
                 </Link>
+                {isSignUpOpen && (
+                  <div className="fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div
+                      ref={signUpRef}
+                      className="relative mx-auto w-full max-w-md overflow-hidden rounded-lg px-8 pt-14 pb-8 text-center bg-darkmode"
+                    >
+                      <button
+                        onClick={() => setIsSignUpOpen(false)}
+                        className="absolute top-4 right-4 text-gray-400 hover:text-white"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-6 w-6"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M6 18L18 6M6 6l12 12"
+                          />
+                        </svg>
+                      </button>
+                      <SignUp
+                        isOpen={true}
+                        onClose={() => {
+                          setIsSignUpOpen(false);
+                          router.push("/");
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
               </>
             ) : (
               <button

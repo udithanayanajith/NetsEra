@@ -3,8 +3,7 @@ import Breadcrumb from "@/components/Common/Breadcrumb";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title:
-    "Sign In | Property",
+  title: "Sign In | Property",
 };
 
 const SigninPage = () => {
@@ -12,7 +11,12 @@ const SigninPage = () => {
     <>
       <Breadcrumb pageName="Sign In Page" />
 
-      <Signin />
+      <Signin
+        isOpen={false}
+        onClose={function (): void {
+          throw new Error("Function not implemented.");
+        }}
+      />
     </>
   );
 };

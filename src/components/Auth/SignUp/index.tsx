@@ -6,8 +6,11 @@ import toast from "react-hot-toast";
 import Logo from "@/components/Layout/Header/Logo";
 import Loader from "@/components/Common/Loader";
 import { signUp } from "../firebaseConfig/authService";
-
-const SignUp = ({ onClose }: { onClose: () => void }) => {
+interface SignUpModalProps {
+  isOpen: boolean; // Add isOpen to the props interface
+  onClose: () => void;
+}
+const SignUp = ({ isOpen, onClose }: SignUpModalProps) => {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
